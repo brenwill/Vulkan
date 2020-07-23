@@ -176,7 +176,16 @@
 #endif
 
 
-// TESSELLATION - Currently unsupported by MoltenVK
+// TESSELLATION
+
+#ifdef MVK_terraintessellation
+#    include "../terraintessellation/terraintessellation.cpp"
+#endif
+
+// P-N Triangles
+#ifdef MVK_tessellation
+#    include "../tessellation/tessellation.cpp"
+#endif
 
 
 // GEOMETRY SHADER - Unsupported by Metal
@@ -186,6 +195,10 @@
 
 
 // MISC
+
+#ifdef MVK_screenshot
+#	include "../screenshot/screenshot.cpp"
+#endif
 
 #ifdef MVK_parallaxmapping
 #	include "../parallaxmapping/parallaxmapping.cpp"

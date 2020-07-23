@@ -555,6 +555,7 @@ public:
 	{
 		switch (keyCode)
 		{
+		case KEY_SPACE:
 		case KEY_F2:
 		case GAMEPAD_BUTTON_A:
 			saveScreenshot("screenshot.ppm");
@@ -567,7 +568,7 @@ public:
 #if defined(__ANDROID__)
 		textOverlay->addText("\"Button A\" to save screenshot", 5.0f, 85.0f, VulkanTextOverlay::alignLeft);
 #else
-		textOverlay->addText("\"F2\" to save screenshot", 5.0f, 85.0f, VulkanTextOverlay::alignLeft);
+		textOverlay->addText("\"F2\" or Space to save screenshot", 5.0f, 85.0f, VulkanTextOverlay::alignLeft);
 #endif
 	}
 };
