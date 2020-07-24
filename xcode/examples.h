@@ -27,7 +27,6 @@
 // In the list below, the comments indicate entries that,
 // under certain conditions, that may not run as expected.
 
-#define MVK_vulkanscene
 
 // BASICS
 

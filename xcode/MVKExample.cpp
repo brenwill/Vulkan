@@ -21,7 +21,6 @@ MVKExample::MVKExample(void* view) {
     _vulkanExample = new VulkanExample();
     _vulkanExample->initVulkan();
     _vulkanExample->setupWindow(view);
-    _vulkanExample->initSwapchain();
     _vulkanExample->prepare();
 }
 

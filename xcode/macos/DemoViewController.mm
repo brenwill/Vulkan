@@ -11,7 +11,7 @@
 #include "MVKExample.h"
 
 
-const std::string VulkanExampleBase::getAssetPath() {
+const std::string getAssetPath() {
     return [NSBundle.mainBundle.resourcePath stringByAppendingString: @"/data/"].UTF8String;
 }
 
