@@ -8,10 +8,23 @@
 
 #include "VulkanTools.h"
 
+const std::string getAssetPath()
+{
+#if defined(VK_USE_PLATFORM_ANDROID_KHR)
+	return "";
+#elif defined(VK_EXAMPLE_DATA_DIR)
+	return VK_EXAMPLE_DATA_DIR;
+#else
+	return "./../data/";
+#endif
+}
+
 namespace vks
 {
 	namespace tools
 	{
+		bool errorModeSilent = false;
+
 		std::string errorString(VkResult errorCode)
 		{
 			switch (errorCode)
@@ -87,6 +100,21 @@ namespace vks
 			return false;
 		}
 
+		// Returns if a given format support LINEAR filtering
+		VkBool32 formatIsFilterable(VkPhysicalDevice physicalDevice, VkFormat format, VkImageTiling tiling)
+		{
+			VkFormatProperties formatProps;
+			vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProps);
+
+			if (tiling == VK_IMAGE_TILING_OPTIMAL)
+				return formatProps.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+
+			if (tiling == VK_IMAGE_TILING_LINEAR)
+				return formatProps.linearTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+
+			return false;
+		}
+
 		// Create an image memory barrier for changing the layout of
 		// an image and put it into an active command buffer
 		// See chapter 11.4 "Image Layout" for details
@@ -139,7 +167,7 @@ namespace vks
 				break;
 
 			case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-				// Image is a transfer source 
+				// Image is a transfer source
 				// Make sure any reads from the image have been finished
 				imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 				break;
@@ -260,33 +288,25 @@ namespace vks
 				1, &imageMemoryBarrier);
 		}
 
-		void exitFatal(std::string message, std::string caption)
+		void exitFatal(std::string message, int32_t exitCode)
 		{
 #if defined(_WIN32)
-			MessageBox(NULL, message.c_str(), caption.c_str(), MB_OK | MB_ICONERROR);
-#elif defined(__ANDROID__)	
-			LOGE("Fatal error: %s", message.c_str());
-#else
-			std::cerr << message << "\n";
+			if (!errorModeSilent) {
+				MessageBox(NULL, message.c_str(), NULL, MB_OK | MB_ICONERROR);
+			}
+#elif defined(__ANDROID__)
+            LOGE("Fatal error: %s", message.c_str());
+			vks::android::showAlert(message.c_str());
 #endif
-			exit(1);
+			std::cerr << message << "\n";
+#if !defined(__ANDROID__)
+			exit(exitCode);
+#endif
 		}
 
-		std::string readTextFile(const char *fileName)
+		void exitFatal(std::string message, VkResult resultCode)
 		{
-			std::string fileContent;
-			std::ifstream fileStream(fileName, std::ios::in);
-			if (!fileStream.is_open()) {
-				printf("File %s not found\n", fileName);
-				return "";
-			}
-			std::string line = "";
-			while (!fileStream.eof()) {
-				getline(fileStream, line);
-				fileContent.append(line + "\n");
-			}
-			fileStream.close();
-			return fileContent;
+			exitFatal(message, (int32_t)resultCode);
 		}
 
 #if defined(__ANDROID__)
@@ -352,32 +372,6 @@ namespace vks
 			}
 		}
 #endif
-
-		VkShaderModule loadShaderGLSL(const char *fileName, VkDevice device, VkShaderStageFlagBits stage)
-		{
-			std::string shaderSrc = readTextFile(fileName);
-			const char *shaderCode = shaderSrc.c_str();
-			size_t size = strlen(shaderCode);
-			assert(size > 0);
-
-			VkShaderModule shaderModule;
-			VkShaderModuleCreateInfo moduleCreateInfo;
-			moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-			moduleCreateInfo.pNext = NULL;
-			moduleCreateInfo.codeSize = 3 * sizeof(uint32_t) + size + 1;
-			moduleCreateInfo.pCode = (uint32_t*)malloc(moduleCreateInfo.codeSize);
-			moduleCreateInfo.flags = 0;
-
-			// Magic SPV number
-			((uint32_t *)moduleCreateInfo.pCode)[0] = 0x07230203;
-			((uint32_t *)moduleCreateInfo.pCode)[1] = 0;
-			((uint32_t *)moduleCreateInfo.pCode)[2] = stage;
-			memcpy(((uint32_t *)moduleCreateInfo.pCode + 3), shaderCode, size + 1);
-
-			VK_CHECK_RESULT(vkCreateShaderModule(device, &moduleCreateInfo, NULL, &shaderModule));
-
-			return shaderModule;
-		}
 
 		bool fileExists(const std::string &filename)
 		{

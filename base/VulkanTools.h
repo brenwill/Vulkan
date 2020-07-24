@@ -59,16 +59,15 @@
 }
 #endif
 
-#if defined(__ANDROID__)
-#define ASSET_PATH ""
-#else
-#define ASSET_PATH "./../data/"
-#endif
+const std::string getAssetPath();
 
 namespace vks
 {
 	namespace tools
 	{
+		/** @brief Disable message boxes on fatal errors */
+		extern bool errorModeSilent;
+
 		/** @brief Returns an error code as a string */
 		std::string errorString(VkResult errorCode);
 
@@ -78,6 +77,9 @@ namespace vks
 		// Selected a suitable supported depth format starting with 32 bit down to 16 bit
 		// Returns false if none of the depth formats in the list is supported by the device
 		VkBool32 getSupportedDepthFormat(VkPhysicalDevice physicalDevice, VkFormat *depthFormat);
+
+		// Returns if a given format support LINEAR filtering
+		VkBool32 formatIsFilterable(VkPhysicalDevice physicalDevice, VkFormat format, VkImageTiling tiling);
 
 		// Put an image memory barrier for setting an image layout on the sub resource into the given command buffer
 		void setImageLayout(
@@ -111,18 +113,15 @@ namespace vks
 			VkImageSubresourceRange subresourceRange);
 
 		// Display error message and exit on fatal error
-		void exitFatal(std::string message, std::string caption);
+		void exitFatal(std::string message, int32_t exitCode);
+		void exitFatal(std::string message, VkResult resultCode);
 
-		// Load a SPIR-V shader (binary) 
+		// Load a SPIR-V shader (binary)
 #if defined(__ANDROID__)
 		VkShaderModule loadShader(AAssetManager* assetManager, const char *fileName, VkDevice device);
 #else
 		VkShaderModule loadShader(const char *fileName, VkDevice device);
 #endif
-
-		// Load a GLSL shader (text)
-		// Note: GLSL support requires vendor-specific extensions to be enabled and is not a core-feature of Vulkan
-		VkShaderModule loadShaderGLSL(const char *fileName, VkDevice device, VkShaderStageFlagBits stage);
 
 		/** @brief Checks if a file exists */
 		bool fileExists(const std::string &filename);
